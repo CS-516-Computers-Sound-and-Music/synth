@@ -8,9 +8,28 @@ DEBUG = False
 vlm_cntrl = lambda x: x
 SAMPLE_RATE = 44100
 
-current_note = 69
-is_playing = False
+# Callback Parameters
+notes_playing = []
+def generate_sawtooth(note, t, wave_width=0.5):
+    freq = note_to_freq(note)
+    print(note, ": ", freq)
+    sample = signal.sawtooth(2*np.pi*freq*t, width=wave_width) #type:ignore
+    return sample
+def generate_sinwave(note,t):
+    freq = note_to_freq(note)
+    sample = np.sin(2 * np.pi * freq * t)
+    return sample
+wave_gen = generate_sinwave
 
+
+def give_em_the_edgar(wave, fade_length=100):
+    fade_in = np.linspace(0.0,1.0,fade_length)
+    fade = np.linspace(1.0,0.0,fade_length)
+    bowl = np.ones(wave.shape[0] - 2*fade_length)
+
+    mask = np.concatenate((fade_in,bowl,fade))
+
+    return wave * mask
 
 def note_to_freq(note, ref_freq = 440, ref_note = 69):
     """ Get the frequency of a note given the number of 
@@ -18,28 +37,29 @@ def note_to_freq(note, ref_freq = 440, ref_note = 69):
     """
     return ref_freq * 2**((note-ref_note)/12)
 
-def generate_sawtooth(note, t, wave_width=0.1):
-    freq = note_to_freq(note)
-    print(note, ": ", freq)
-    sample = signal.sawtooth(2*np.pi*freq*t, width=wave_width) #type:ignore
-    return sample
-    
-
 
 def callback(outdata, frames, time, status):
-    global current_note, is_playing
-
-    if is_playing:
-        t = np.arange(frames, dtype='float32')/SAMPLE_RATE
-        wave = generate_sawtooth(current_note, t)
-    else:
-        wave=np.zeros(frames)
+    global notes_playing, wave_gen
     
+    wave=np.zeros(frames)
+    t = np.arange(frames, dtype='float32')/SAMPLE_RATE
+    print(notes_playing)
+    for note in notes_playing:
+        wave = np.add(wave, 
+                      wave_gen(note, t))
+    
+    if len(notes_playing)>0:
+        wave = wave/np.max(wave)*0.708
+        wave = give_em_the_edgar(wave, fade_length=80) #ramp over 0.1 MS
+    
+    print(np.max(wave), "~~~~~~~~~~~~~~")
+        
     outdata[:] = wave.reshape(-1,1) #type:ignore
 
 
-def main():
-    global current_note, is_playing
+def main(wave_generator):
+    global notes_playing, wave_gen
+    wave_gen=wave_generator
     # print out some information about the midi connecting
     port_name = mido.get_input_names()[0] #type:ignore
     print("using port ", port_name )#type:ignore
@@ -54,10 +74,9 @@ def main():
             for msg in port:
                 if DEBUG: print(msg)
                 if msg.type == "note_on":
-                    is_playing=True
-                    current_note = int(msg.note)
+                    notes_playing.append(int(msg.note))
                 elif msg.type == "note_off":
-                    is_playing = False
+                    notes_playing.remove(int(msg.note))
     except KeyboardInterrupt:
         print("\nExiting...")
     finally:
@@ -70,9 +89,11 @@ if __name__=="__main__":
                     description='Generates basic sounds for MPK Mini 2',
                     epilog='Code by Shane :)')
     parser.add_argument("-d", "--debug", action="store_true")
+    parser.add_argument("--sin", action='store_true')
     args = parser.parse_args()
     DEBUG = args.debug
-    main()
+    
+    main(wave_generator=generate_sinwave if args.sin else generate_sawtooth)
 
     
 
