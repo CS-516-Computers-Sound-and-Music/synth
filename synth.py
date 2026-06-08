@@ -22,14 +22,14 @@ def generate_sinwave(note,t):
 wave_gen = generate_sinwave
 
 
-def give_em_the_edgar(wave, fade_length=100):
-    fade_in = np.linspace(0.0,1.0,fade_length)
-    fade = np.linspace(1.0,0.0,fade_length)
-    bowl = np.ones(wave.shape[0] - 2*fade_length)
+def fade(wave, fade_length=100):
+    fade_in = np.linspace(0.0,wave[fade_length-1],fade_length)
+    fade_out = np.linspace(wave[-1*fade_length],0.0,fade_length)
+    # bowl = np.ones(wave.shape[0] - 2*fade_length)
 
-    mask = np.concatenate((fade_in,bowl,fade))
+    wave = np.concatenate((fade_in,wave[fade_length:-fade_length],fade_out))
 
-    return wave * mask
+    return wave
 
 def note_to_freq(note, ref_freq = 440, ref_note = 69):
     """ Get the frequency of a note given the number of 
@@ -49,8 +49,8 @@ def callback(outdata, frames, time, status):
                       wave_gen(note, t))
     
     if len(notes_playing)>0:
+        wave = fade(wave, fade_length=100) #ramp over 0.1 MS
         wave = wave/np.max(wave)*0.708
-        wave = give_em_the_edgar(wave, fade_length=80) #ramp over 0.1 MS
     
     print(np.max(wave), "~~~~~~~~~~~~~~")
         
