@@ -18,8 +18,9 @@ def note_to_freq(note, ref_freq = 440, ref_note = 69):
     """
     return ref_freq * 2**((note-ref_note)/12)
 
-def generate_sawtooth(note, t, wave_width=0.9):
+def generate_sawtooth(note, t, wave_width=0.1):
     freq = note_to_freq(note)
+    print(note, ": ", freq)
     sample = signal.sawtooth(2*np.pi*freq*t, width=wave_width) #type:ignore
     return sample
     
@@ -27,7 +28,7 @@ def generate_sawtooth(note, t, wave_width=0.9):
 
 def callback(outdata, frames, time, status):
     global current_note, is_playing
-    
+
     if is_playing:
         t = np.arange(frames, dtype='float32')/SAMPLE_RATE
         wave = generate_sawtooth(current_note, t)
