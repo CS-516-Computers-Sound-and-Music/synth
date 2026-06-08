@@ -11,14 +11,12 @@ SAMPLE_RATE = 44100
 current_note = 69
 is_playing = False
 
-ref_freq = 440 #A5 in Hz
-ref_note = 69  #where I want A5 to be on the keyboard
 
-def note_to_freq(note, base_note = 440):
+def note_to_freq(note, ref_freq = 440, ref_note = 69):
     """ Get the frequency of a note given the number of 
     semitones it is away from the base tone (default: A4-440Hz)
     """
-    return base_note * 2**((note-ref_note)/12)
+    return ref_freq * 2**((note-ref_note)/12)
 
 def generate_sawtooth(note, t, wave_width=0.9):
     freq = note_to_freq(note)
@@ -28,12 +26,11 @@ def generate_sawtooth(note, t, wave_width=0.9):
 
 
 def callback(outdata, frames, time, status):
-    global current_freq, is_playing
-    print(is_playing)
+    global current_note, is_playing
+    
     if is_playing:
         t = np.arange(frames, dtype='float32')/SAMPLE_RATE
         wave = generate_sawtooth(current_note, t)
-        if DEBUG: print(wave)
     else:
         wave=np.zeros(frames)
     
@@ -41,7 +38,7 @@ def callback(outdata, frames, time, status):
 
 
 def main():
-    global current_freq, is_playing
+    global current_note, is_playing
     # print out some information about the midi connecting
     port_name = mido.get_input_names()[0] #type:ignore
     print("using port ", port_name )#type:ignore
