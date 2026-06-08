@@ -15,7 +15,7 @@ with mido.open_input(port_name) as port: #type:ignore
 ```
 
 After pressing a few keys, I found the following
-- `key on` has a velocity
+- `key on` has a velocity > 0
 - `key off` has velocity 0
 - True `velocity` can go between 1 and 127 (I am assuming that there are 7 bits allocated for the velocity). Velocity does not
 change between key off events.
@@ -27,3 +27,5 @@ activated. I'm not sure how to incorporate these at the moment.
 - There are 8 drum pads. While the _keys are mapped to channel 1_
 while _drum pads are mapped to channel 0_ and notes 44 through 50. 
 
+
+I used basically the same `note_to_freq` method as from aleatoric. The only change that I made here was to use the note provided by the midi to calculate the semitone offset by subtracting 69 (where I want the A5 note to be on the keyboard) from the note provided.
