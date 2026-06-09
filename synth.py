@@ -10,6 +10,7 @@ SAMPLE_RATE = 88200
 
 # Callback Parameters
 notes_playing = []
+last_freq = 0
 def generate_sawtooth(note, t, wave_width=0.5):
     freq = note_to_freq(note)
     print(note, ": ", freq)
@@ -21,16 +22,11 @@ def generate_sinwave(note,t):
     return sample
 wave_gen = generate_sinwave
 
-
-def fade(wave, fade_length=80):
-    fade_in = np.linspace(0.0,1,fade_length)
-    fade_out = np.linspace(1,0.0,fade_length)
-    bowl = np.ones(wave.shape[0] - 2*fade_length)
-
-    mask = np.concatenate((fade_in,bowl,fade_out))
-    # wave = np.concatenate((fade_in,wave[fade_length:-fade_length],fade_out))
-
-    return wave*mask
+def fade (wave, fade_length=100):
+    global last_freq
+    fade_in = np.linspace(last_freq,wave[fade_length-1],fade_length)
+    wave = np.concatenate((fade_in,wave[fade_length:]))
+    return wave
 
 def note_to_freq(note, ref_freq = 440, ref_note = 69):
     """ Get the frequency of a note given the number of 
@@ -40,7 +36,7 @@ def note_to_freq(note, ref_freq = 440, ref_note = 69):
 
 
 def callback(outdata, frames, time, status):
-    global notes_playing, wave_gen
+    global notes_playing, wave_gen, last_freq
     
     wave=np.zeros(frames)
     t = np.arange(frames, dtype='float32')/SAMPLE_RATE
@@ -48,10 +44,11 @@ def callback(outdata, frames, time, status):
         wave = np.add(wave, 
                       wave_gen(note, t))
     
-    if len(notes_playing)>0:
-        wave = fade(wave) #ramp over 0.1 MS
+    wave = fade(wave)
+    if np.max(wave)>0:
         wave = wave/np.max(wave)*0.708
     
+    last_freq = wave[-1]
         
     outdata[:] = wave.reshape(-1,1) #type:ignore
 

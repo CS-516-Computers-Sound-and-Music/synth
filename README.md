@@ -34,3 +34,20 @@ I used basically the same `note_to_freq` method as from aleatoric. The only chan
 Though my envelope worked fine for the aleatoric music, I have noticed continued buzzing (low end noise that I assume is from some sort of aliasing). This occurs even with a sin wave, which I find frustrating. However, the sawtooths sound pretty much how I'd expect. 
 
 Overall, this has been pretty fun and I'm excited to play around more with the Midi! I had no issues with latency, but because of the callback function, though, I have been struggling to create a sense of continuity between samples in the buffer.
+
+__UPDATE TO HELP WITH BUZZING!__
+
+The previous fade method I was using is shown below: 
+```
+def fade(wave, fade_length=80):
+    fade_in = np.linspace(0.0,1,fade_length)
+    fade_out = np.linspace(1,0.0,fade_length)
+    bowl = np.ones(wave.shape[0] - 2*fade_length)
+
+    mask = np.concatenate((fade_in,bowl,fade_out))
+    # wave = np.concatenate((fade_in,wave[fade_length:-fade_length],fade_out))
+
+    return wave*mask
+```
+
+However, I instead tried adding a global parameter for last value and just overwriting the first few samples of the next block in the buffer with a line connecting the last value and the value at wave[`fade_length`] and found it gave a _massive_ improvement in buzzing! 
