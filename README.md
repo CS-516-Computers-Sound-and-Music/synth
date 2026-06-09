@@ -29,3 +29,8 @@ while _drum pads are mapped to channel 0_ and notes 44 through 50.
 
 
 I used basically the same `note_to_freq` method as from aleatoric. The only change that I made here was to use the note provided by the midi to calculate the semitone offset by subtracting 69 (where I want the A5 note to be on the keyboard) from the note provided.
+
+## Envoloping and buzzing
+Though my envelope worked fine for the aleatoric music, I have noticed continued buzzing (low end noise that I assume is from some sort of aliasing). This occurs even with a sin wave, which I find frustrating. However, the sawtooths sound pretty much how I'd expect. 
+
+Overall, this has been pretty fun and I'm excited to play around more with the Midi! I had no issues with latency, but because of the callback function, though, I have been struggling to create a sense of continuity between samples in the buffer.
